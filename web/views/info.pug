@@ -1,0 +1,12 @@
+extends layout.pug
+
+block content
+  header
+    .container
+      section.info     
+        ul
+          li #[i.fas.fa-fingerprint] #{id}
+          li #[i.fas.fa-address-card] #{alias}
+          li #[i.fas.fa-clock] #{createdTimestamp}
+        p 
+          small Stumble here by accident? #[a(href='https://diglet.me') Diglet] provides secure public links to your computer.

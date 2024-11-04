@@ -1,0 +1,38 @@
+extends layout.pug
+
+block content
+  header
+    .container
+      img(src='/img/icon.svg')
+      h1 Diglet
+      h2 Encrypted public links to your computer!
+  .container
+    section.about
+      ul
+        li 
+          i.fas.fa-share-alt
+          br
+          span Share a folder on your computer with friends
+        li 
+          i.fas.fa-users
+          br
+          span Collaborate on web development projects in real-time
+        li 
+          i.fas.fa-server
+          br
+          span Punch apps through NATs and firewalls
+        li 
+          i.fas.fa-cloud
+          br
+          span Test your code using cloud browsers
+    section.download
+      h3 Downloads
+      ul
+        li
+          a(href='/downloads/diglet-mac.dmg') #[i.fab.fa-apple]
+        li
+          a(href='/downloads/diglet-win.exe') #[i.fab.fa-windows]
+        li
+          a(href='/downloads/diglet-linux.deb') #[i.fab.fa-ubuntu]
+      p Advanced user? Check out the #[a(href='https://gitlab.com/deadcanaries/diglet') source code]! 
+ 

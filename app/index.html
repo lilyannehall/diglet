@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Diglet</title>
+    <link rel="stylesheet" href="assets/vendor/css/fontawesome.css">
+    <link rel="stylesheet" href="assets/css/fonts.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+  </head>
+  <body>
+    <div id="app" v-on:click="clickOutsidePrompt">
+      <div id="header">
+        <header>
+          <button class="left action" v-on:click="addFiles"><img src="assets/vendor/adwaita-scalable/actions/folder-new-symbolic.svg"></button>
+          <button class="left action _prompt" v-bind:class="{ active: showPortField }" v-on:click="togglePortPrompt"><img src="assets/vendor/adwaita-scalable/apps/preferences-system-network-symbolic.svg" class="_prompt"></button>
+          <div class="button-menu _prompt" id="port-menu" v-if="showPortField">
+            <form class="_prompt" v-on:submit.prevent="addService">
+              <input class="_prompt" ref="port" type="number" required placeholder="Enter port..." min="1" max="65535" v-model="portFieldValue" />
+              <input class="_prompt" type="submit" value="Establish tunnel" />
+            </form>
+          </div>
+          <h1>Diglet (BETA)</h1>
+          <button class="right window" v-on:click="closeWindow"><img src="assets/vendor/adwaita-scalable/ui/window-close-symbolic.svg"></button>
+          <!--<button class="right window" v-on:click="maxWindow"><img src="assets/vendor/adwaita-scalable/ui/window-maximize-symbolic.svg"></button>-->
+          <button class="right window" v-on:click="minWindow"><img src="assets/vendor/adwaita-scalable/ui/window-minimize-symbolic.svg"></button>
+        </header>
+      </div>
+      <div id="viewport">
+        <section>
+          <p class="help" v-if="!tunnels.length">
+            <img class="app-logo" src="assets/img/icon.svg"/ >
+            <strong><img src="assets/vendor/adwaita-scalable/actions/folder-new-symbolic.svg"> Tunnel a folder<br/></strong>
+            <strong><img src="assets/vendor/adwaita-scalable/apps/preferences-system-network-symbolic.svg"> Tunnel a local server<br/></strong>
+            <em>A tunnel is a public internet link to a resource on your computer.</em>
+          </p>
+          <tunnel v-for="tunnel in tunnels" v-bind:local-server-port="tunnel.localServerPort" v-bind:rootdir="tunnel.rootdir"></tunnel>
+        </section>
+      </div>
+    </div>
+    <script type="text/javascript" src="app.js"></script>
+  </body>
+</html>
