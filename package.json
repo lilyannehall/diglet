@@ -7,12 +7,12 @@
     "diglet": "bin/diglet.js",
     "diglet-server": "bin/diglet-server.js",
     "diglet-tunnel": "bin/diglet-tunnel.js"
-  }, 
-  "engines" : { 
-    "node" : "10" 
+  },
+  "engines": {
+    "node": "10"
   },
   "scripts": {
-    "start-app": "DEBUG=1 electron-forge start -- --enable-transparent-visuals --disable-gpu",
+    "start-app": "DEBUG=1 electron-forge start -- --enable-transparent-visuals --disable-gpu --no-sandbox",
     "make-app": "electron-forge package",
     "release-app": "electron-forge make",
     "test": "mocha --exit",
@@ -37,13 +37,13 @@
   },
   "homepage": "https://github.com/tacticalchihuahua/diglet#readme",
   "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.50",
+    "@electron-forge/cli": "^6.0.0-beta.60",
     "@electron-forge/maker-deb": "^6.0.0-beta.50",
     "@electron-forge/maker-dmg": "^6.0.0-beta.50",
     "@electron-forge/maker-squirrel": "^6.0.0-beta.50",
     "@electron-forge/maker-zip": "^6.0.0-beta.50",
     "chai": "^4.1.2",
-    "electron": "^8.0.2",
+    "electron": "9",
     "eslint": "^6.8.0",
     "istanbul": "^0.4.5",
     "mocha": "^5.2.0",
