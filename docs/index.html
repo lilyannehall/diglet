@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>Home - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Diglet.html">Diglet</a><ul class='methods'><li data-type='method'><a href="Diglet.html#close">close</a></li><li data-type='method'><a href="Diglet.html#listen">listen</a></li></ul></li><li><a href="Frontend.html">Frontend</a></li><li><a href="Handshake.html">Handshake</a><ul class='methods'><li data-type='method'><a href="Handshake.html#sign">sign</a></li><li data-type='method'><a href="Handshake.html#toBuffer">toBuffer</a></li><li data-type='method'><a href="Handshake.html#verify">verify</a></li><li data-type='method'><a href="Handshake.html#.challenge">challenge</a></li></ul></li><li><a href="Proxy.html">Proxy</a><ul class='methods'><li data-type='method'><a href="Proxy.html#clean">clean</a></li><li data-type='method'><a href="Proxy.html#pop">pop</a></li><li data-type='method'><a href="Proxy.html#push">push</a></li></ul></li><li><a href="Server.html">Server</a><ul class='methods'><li data-type='method'><a href="Server.html#getProxyInfoById">getProxyInfoById</a></li><li data-type='method'><a href="Server.html#listen">listen</a></li><li data-type='method'><a href="Server.html#routeHttpRequest">routeHttpRequest</a></li><li data-type='method'><a href="Server.html#routeWebSocketConnection">routeWebSocketConnection</a></li></ul></li><li><a href="Tunnel.html">Tunnel</a><ul class='methods'><li data-type='method'><a href="Tunnel.html#close">close</a></li><li data-type='method'><a href="Tunnel.html#open">open</a></li><li data-type='method'><a href="Tunnel.html#queryProxyInfoFromServer">queryProxyInfoFromServer</a></li><li data-type='method'><a href="Tunnel.html#reconnect">reconnect</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+    <section class="package">
+        <h3> </h3>		
+    </section>
+
+
+
+
+
+
+
+
+
+    
+
+
+
+    <section class="readme usertext">
+        <article><h1>Diglet</h1>
+<p>Diglet is an <em>fully encrypted</em> reverse HTTPS tunnel server and client. It
+enables you to securely make any HTTP(S) server running behind a restrictive
+NAT or firewall accessible from the internet.</p>
+<h2>Installation</h2>
+<p>Diglet depends on Node.js 10 and the appropriate packages for building native
+modules for your platform.</p>
+<pre class="prettyprint source lang-bash"><code># install nodejs via node version manager
+# skip this step on windows and just install the package from nodejs.org
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
+
+# source node version manager
+source ~/.bashrc
+
+# install nodejs lts release
+nvm install 10
+
+# install build dependencies (debian based)
+#   apt install build-essential 
+# 
+# install build dependencies (macos / osx)
+#   xcode-select --install
+# 
+# install build dependencies (windows)
+#   npm install -g windows-build-tools
+
+# install diglet using node package manager
+npm install -g github:tacticalchihuahua/diglet
+</code></pre>
+<h2>Client Tunneling</h2>
+<p>Once you have the <code>diglet</code> package installed, you can use it to establish a
+reverse tunnel from a local HTTP(S) server to a diglet server on the internet.
+By default, diglet is configured to use a test server <code>diglet.me</code>. Don't
+depend on it, but if it's online you can feel free to test with it. It is
+recommended to run your own diglet server, which is described in detail in the
+next section.</p>
+<p>Setting up a tunnel is easy. Let's say you have a website running at
+<code>localhost:8080</code>:</p>
+<pre class="prettyprint source lang-bash"><code>diglet tunnel --port 8080
+</code></pre>
+<p>Diglet will establish a tunnel and print your unique public URL to the console.
+If you would like more verbose logging, which can be useful for debugging, add
+the <code>--debug</code> flag to the above command. Your unique URL includes a subdomain
+that is a 160 bit hash of your public key. The private portion of this key is
+generated automatically every time you run diglet.</p>
+<p>If you want to re-use the same URL every time you create a tunnel, pass the
+<code>--save</code> flag and it will be saved to <code>$HOME/.diglet.prv</code> and that key will be
+used going forward when called with the <code>--load</code> option. Note that if you use a
+saved key, you must not load the same key when running multiple tunnels on the
+same host or you will get unexpected results.</p>
+<p>After setting up your own server, create a configuration file to reflect this
+at the path <code>$HOME/.digletrc</code>:</p>
+<pre class="prettyprint source"><code>Hostname=mydomain.tld
+TunnelPort=8443
+</code></pre>
+<h2>Server Setup</h2>
+<p>This guide makes a few assumptions about the providers you will use for your
+server and for your domains, however this should translate to any number of
+other providers.</p>
+<h3>Step 1: Create a VPS on Digital Ocean</h3>
+<ul>
+<li>Login or create an account at <a href="https://digitalocean.com">Digital Ocean</a>, then
+navigate to <em>Droplets &gt; Create</em>. Under <em>Distributions</em>, select <em>Debian</em>.</li>
+<li>Diglet does not require very many resources, so you may safely select the
+cheapest option with <em>1 vCPU + 1GB Memory</em>.</li>
+<li>Be sure to add your SSH public key to the droplet so we are able to log into
+it when we are ready.</li>
+<li>Name your droplet something memorable like &quot;diglet-server&quot; and create it.</li>
+<li>When your droplet is finished being created, take note of its IP address,
+because we'll need it for the next step.</li>
+</ul>
+<h3>Step 2: Setup DNS A Records on Namecheap</h3>
+<ul>
+<li>Login or create an account at <a href="https://namecheap.com">Namecheap</a>, then either
+purchase a new domain or navigate to your existing domain list.</li>
+<li>Navigate to <em>Advanced DNS</em> and create a two new A records:
+<ul>
+<li><code>@ -&gt; &lt;droplet ip address&gt;</code></li>
+<li><code>* -&gt; &lt;droplet ip address&gt;</code></li>
+</ul>
+</li>
+<li>You'll want to set the TTL to the lowest available option, because we want
+this to propagate as quickly as possible so we can generate our SSL
+certificate.</li>
+</ul>
+<h3>Step 3: Generate Wildcard SSL with LetsEncrypt</h3>
+<p>SSH into your droplet with <code>ssh root@&lt;your droplet ip address&gt;</code> and install
+LetsEncrypt's <code>certbot-auto</code> program. The version that is in the Debian
+repositories does not support wildcard certs, so you must install with:</p>
+<pre class="prettyprint source lang-bash"><code># download the certbot program
+wget https://dl.eff.org/certbot-auto
+
+# make it executable
+chmod +x certbot-auto
+
+# request certificates for your domain and wildcard subdomain
+./certbot-auto certonly --manual -d *.mydomainname.tld,mydomainname.tld \ 
+--agree-tos \
+--no-bootstrap --manual-public-ip-logging-ok --preferred-challenges dns-01 \
+-m your-email-address  \
+--server https://acme-v02.api.letsencrypt.org/directory
+</code></pre>
+<p>Certbot will do some work and respond with something similar to:</p>
+<pre class="prettyprint source"><code>- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Please deploy a DNS TXT record under the name
+_acme-challenge.tunnel.bookch.in with the following value:
+
+20BbljVikhE2Hc4O6LsFoBuxUNSycRkioV2sezLnVLA
+
+Before continuing, verify the record is deployed.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Press Enter to Continue
+
+</code></pre>
+<p>Log back into Namecheap and navigate back to <em>Domain List &gt; Domain &gt; Advanced
+DNS</em> and create a new TXT record according to the instructions provided by
+certbot. Set TTL to 1 minute and save. Come back to your SSH session where
+certbot is waiting and press enter. Certbot will verify the TXT record and
+issue you a wildcard subdomain certificate and private key will be placed in
+<code>/etc/letsencrypt/live/mydomain.tld/</code>. Note that path, because you'll need it
+in the next step where we will configure our Diglet server.</p>
+<h3>Step 4: Configure Diglet Server</h3>
+<p>Install Diglet on your droplet according to the instructions in the
+<em>Installation</em> section. Note that if you are installing and running
+diglet as root, you need to append <code>--unsafe-perm</code> to the install
+command.</p>
+<p>Create a file called <code>.digletrc</code> in the home directory (<code>/root/.digletrc</code>),
+containing the following:</p>
+<pre class="prettyprint source lang-ini"><code>Hostname = mydomain.tld
+ProxyPort = 443
+RedirectPort = 80
+TunnelPort = 8443
+ServerPrivateKey = /etc/letsencrypt/live/mydomain.tld/privkey.pem
+ServerSSLCertificate = /etc/letsencrypt/live/mydomain.tld/fullchain.pem
+</code></pre>
+<p>Be sure to replace <code>mydomain.tld</code> with your domain name. When you are ready
+go ahead and run <code>diglet server</code> to start up your server!</p>
+<h4>Using a Process Manager</h4>
+<p>You can run Diglet in the background and have it restart automatically in the
+unlikely event the process crashes using the
+<a href="https://github.com/foreverjs/forever"><code>forever</code></a> package.</p>
+<pre class="prettyprint source lang-bash"><code>npm install -g forever # add --unsafe-perm if running as root
+</code></pre>
+<p>Then start Diglet using forever with:</p>
+<pre class="prettyprint source lang-bash"><code>forever start $(which diglet)
+</code></pre>
+<p>Refer to the forever documentation for more information on how to monitor your
+process.</p>
+<h4>Whitelisting Clients</h4>
+<p>Diglet also supports a whitelist feature that prevents arbitrary clients from
+establishing tunnels. This is an optional feature that allows you to set a
+list of client tunnel identifiers in your configuration file. The identifiers
+are the RMD-160 hash of the user's public key.</p>
+<p>For example, if you want to only allow the identity
+<code>3b7bc044d717e272cde960a8da782846425fd59c</code> to establish a tunnel, add the
+following to your <code>.digletrc</code>:</p>
+<pre class="prettyprint source lang-ini"><code>Whitelist[]=3b7bc044d717e272cde960a8da782846425fd59c
+</code></pre>
+<p>Repeat as many of these lines as you like to add more authorized clients.</p>
+<h2>How It Works</h2>
+<p>Diglet is a relatively simple machine. It consists of only 4 classes: Server,
+Proxy, Tunnel, and Handshake. A server performs two duties: it listens for
+HTTPS requests on the internet and forwards them through a pool of tunnels
+associated with a proxy.</p>
+<p>When a client establishes a tunnel, it connects to a TCP socket on the Diglet
+server over TLS. The server issues a challenge to the client which the client
+signs using ECDSA to authenticate it's identity. This is the handshake and if
+it's successful, the client keeps the socket open and the server adds it to a
+pool of other connections (&quot;tunnels&quot;) from this same client.</p>
+<p>This connection pool is associated with the client's identity key and is called
+a &quot;proxy&quot;. When the diglet server receives a HTTPS request on the &quot;front&quot;, it
+parses the subdomain, matches it against the currently managed proxies. If it
+finds a proxy that matches, it selects one of the open tunnels back to the
+client and pipes the incoming request through it.</p>
+<p>On the client's end, every tunnel that is established is connected to an open
+socket to a local HTTP(S) service running on the client's computer (but not
+accessible directly over the internet). When the diglet proxy forwards an
+incoming request down the tunnel, it is received by the client and forwarded
+straight through to the client's local server which responds and the resulting
+response get piped back through the tunnel, up to the diglet server, and on
+through to the host that made the original HTTPS request.</p>
+<p>Every connection along this path is secured with TLS, making all messages sent
+over the wire fully encrypted, even if the server running on the client's
+computer is <em>not</em> secured with SSL. Every time a a tunnel is used, it is
+disposed of and new tunnel is opened in its place. This allows for a fairly
+high number of requests to be serviced at any given moment. Diglet will even
+queue requests until a new tunnel is opened if all tunnels are exhausted or
+if the client disconnects or has a poor connection.</p>
+<p>Diglet intentionally does not support cleartext connections and by default is
+configured to redirect all requests to port 80 to port 443. We recommend using
+the browser extension <a href="https://www.eff.org/https-everywhere">HTTPSEverywhere</a>,
+since this technique still allows an attacker to intercept and redirect the
+original request if HTTPS is not explicity used. Diglet does, however, modify
+the response sent back from your tunneled server to include a
+<a href="https://en.m.wikipedia.org/wiki/HTTP_Strict_Transport_Security">HTTP Strict Transport Security (HSTS)</a>
+header so that there should only <em>ever</em> be a single unencrypted request that
+has to be redirected for a user <em>if</em> they mistakenly try to access your tunnel
+over HTTP.</p>
+<h2>Programmatic Usage</h2>
+<p>You can establish a reverse tunnel programmatically from other Node.js
+programs easily. Just install diglet as a dependency of your project:</p>
+<pre class="prettyprint source lang-bash"><code>npm install diglet --save
+</code></pre>
+<p>Import the module and use the <code>Tunnel</code> class:</p>
+<pre class="prettyprint source lang-js"><code>const { Tunnel } = require('@tacticalchihuahua/diglet');
+const options = {
+  localAddress: '127.0.0.1',
+  localPort: 8080,
+  remoteAddress: 'mydigletserver.tld',
+  remotePort: 8443,
+  logger: console, // optional
+  privateKey: require('crypto').randomBytes(32) // optional
+};
+const tunnel = new Tunnel(options);
+
+tunnel.once('disconnected', function(err) {
+  console.error(err);
+});
+
+tunnel.once('connected', function() {
+  console.log(tunnel.url);
+});
+
+tunnel.open();
+</code></pre>
+<h2>Building a Release</h2>
+<pre class="prettyprint source lang-bash"><code>git clone https://gitlab.com/tacticalchihuahua/diglet.git
+cd diglet
+npm install
+npm run release # releases for all platforms will be in dist/
+</code></pre>
+<h2>License</h2>
+<p>Diglet - Fully Encrypted Reverse HTTPS Tunnel<br>
+Copyright (C) 2019 Lily Anne Hall.</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.</p>
+<p>You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.</p></article>
+    </section>
+
+
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Sat Nov 09 2024 14:31:55 GMT-0800 (Pacific Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

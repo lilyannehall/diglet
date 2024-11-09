@@ -1,0 +1,19 @@
+{
+  "opts": {
+    "template": "node_modules/docdash"
+  },
+  "templates": {
+    "systemName": "Diglet",
+    "copyright":  "Copyright 2019 Lily Anne Hall.",
+    "includeDate": false,
+    "navType": "vertical",
+    "linenums": false,
+    "collapseSymbols": false,
+    "inverseNav": false,
+    "outputSourceFiles": true,
+    "outputSourcePath": true,
+    "dateFormat": "",
+    "sort": "longname",
+    "syntaxTheme": "default"
+  }
+}

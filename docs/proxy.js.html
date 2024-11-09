@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>proxy.js - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Diglet.html">Diglet</a><ul class='methods'><li data-type='method'><a href="Diglet.html#close">close</a></li><li data-type='method'><a href="Diglet.html#listen">listen</a></li></ul></li><li><a href="Frontend.html">Frontend</a></li><li><a href="Handshake.html">Handshake</a><ul class='methods'><li data-type='method'><a href="Handshake.html#sign">sign</a></li><li data-type='method'><a href="Handshake.html#toBuffer">toBuffer</a></li><li data-type='method'><a href="Handshake.html#verify">verify</a></li><li data-type='method'><a href="Handshake.html#.challenge">challenge</a></li></ul></li><li><a href="Proxy.html">Proxy</a><ul class='methods'><li data-type='method'><a href="Proxy.html#clean">clean</a></li><li data-type='method'><a href="Proxy.html#pop">pop</a></li><li data-type='method'><a href="Proxy.html#push">push</a></li></ul></li><li><a href="Server.html">Server</a><ul class='methods'><li data-type='method'><a href="Server.html#getProxyInfoById">getProxyInfoById</a></li><li data-type='method'><a href="Server.html#listen">listen</a></li><li data-type='method'><a href="Server.html#routeHttpRequest">routeHttpRequest</a></li><li data-type='method'><a href="Server.html#routeWebSocketConnection">routeWebSocketConnection</a></li></ul></li><li><a href="Tunnel.html">Tunnel</a><ul class='methods'><li data-type='method'><a href="Tunnel.html#close">close</a></li><li data-type='method'><a href="Tunnel.html#open">open</a></li><li data-type='method'><a href="Tunnel.html#queryProxyInfoFromServer">queryProxyInfoFromServer</a></li><li data-type='method'><a href="Tunnel.html#reconnect">reconnect</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">proxy.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+const merge = require('merge');
+const assert = require('assert');
+const { createLogger } = require('bunyan');
+const { EventEmitter } = require('events');
+
+/**
+ * Sets up a proxy server for use by the remote tunnel server
+ */
+class Proxy extends EventEmitter {
+
+  static get DEFAULTS() {
+    return {
+      id: null,
+      logger: createLogger({ name: 'diglet' }),
+    };
+  }
+
+  /**
+   * Manages proxy for tunneling hosts to connect
+   * @param {object} options
+   * @param {string} options.id - Unique ID for this proxy
+   * @param {Object} [options.logger=console] - Logger to use
+   */
+  constructor(options) {
+    super();
+
+    this._opts = this._checkOptions(merge(Proxy.DEFAULTS, options));
+    this._waitingHandlers = [];
+    this._connectedSockets = [];
+    this._logger = this._opts.logger;
+    this._created = Date.now();
+  }
+
+  /**
+   * Validates options given to constructor
+   * @private
+   */
+  _checkOptions(o) {
+    assert(typeof o.id === 'string', 'Invalid proxyId');
+    return o;
+  }
+
+  get id() {
+    return this._opts.id;
+  }
+
+  get info() {
+    return {
+      id: this.id,
+      connectedSockets: this._connectedSockets.length,
+      waitingHandlers: this._waitingHandlers.length,
+      createdTimestamp: this._created
+    };
+  }
+
+  /**
+   * Returns a connected socket off the list to process a request and places it
+   * back when the handler is finished
+   * @param {Proxy~socketHandler} socketHandler
+   */
+  pop(socketHandler) {
+    const socket = this._connectedSockets.shift();
+
+    this._logger.info('getting socket from proxy tunnel');
+
+    if (!socket) {
+      this._logger.warn('no socket available, queuing handler');
+      return this._waitingHandlers.push(socketHandler);
+    } else if (socket.destroyed || !socket.writable) {
+      this._logger.warn('got destroyed socket, getting another...');
+      this._handleSocketClose(socket);
+      return this.pop(socketHandler);
+    }
+
+    this._logger.info('got tunnel socket, passing to handler');
+    socketHandler(socket, () => {
+      this._logger.info('socket handler finished, adding back to pool');
+
+      if (!socket.destroyed) {
+        this._connectedSockets.push(socket);
+      }
+
+      if (this._connectedSockets.length !== 0) {
+        this._processNextWaitingHandler();
+      }
+    });
+  }
+  /**
+   * @callback Proxy~socketHandler
+   * @param {net.Socket} socket - The socket back to the client
+   * @param {Proxy~socketHandlerCallback}
+   */
+  /**
+   * @callback Proxy~socketHandlerCallback
+   * @param {Error|null} error - Possible error during handling
+   */
+
+  /**
+   * Pulls the next waiting hanlder off the list and processes it
+   * @private
+   */
+  _processNextWaitingHandler() {
+    const waitingHandler = this._waitingHandlers.shift();
+
+    if (waitingHandler) {
+      this.pop(waitingHandler);
+    }
+  }
+
+  /**
+   * Cleans up waiting and open connections
+   */
+  clean() {
+    const destroyed = [];
+
+    this._logger.info('cleaning connection pool');
+    this._waitingHandlers.forEach(handler => handler(null));
+    this._connectedSockets.forEach(socket => {
+      if (socket.destroyed || !socket.writable) {
+        destroyed.push(socket);
+      }
+    });
+    destroyed.forEach(socket => {
+      this._connectedSockets.splice(this._connectedSockets.indexOf(socket), 1);
+    });
+    this.emit('end');
+  }
+
+  /**
+   * Processes incoming connections from tunnel client
+   * @param {net.Socket} socket - Raw socket from an incoming connection
+   */
+  push(socket) {
+    this._logger.info('handling incoming tunnel connection');
+    socket.on('close', () => this._handleSocketClose(socket));
+    socket.on('error', (err) => this._handleSocketError(socket, err));
+    this._connectedSockets.push(socket);
+    this._processNextWaitingHandler();
+  }
+
+  /**
+   * Handles a socket error
+   * @private
+   */
+  _handleSocketError(socket, err) {
+    this._logger.error('socket encountered an error: %s', err.message);
+    this.clean();
+    socket.destroy();
+  }
+
+  /**
+   * Handles a closed tunnel socket
+   * @private
+   */
+  _handleSocketClose(socket) {
+    const index = this._connectedSockets.indexOf(socket);
+
+    if (index === -1) {
+      return;
+    }
+
+    this._connectedSockets.splice(index, 1);
+  }
+
+}
+
+module.exports = Proxy;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Sat Nov 09 2024 14:31:55 GMT-0800 (Pacific Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

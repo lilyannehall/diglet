@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>diglet.js - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Diglet.html">Diglet</a><ul class='methods'><li data-type='method'><a href="Diglet.html#close">close</a></li><li data-type='method'><a href="Diglet.html#listen">listen</a></li></ul></li><li><a href="Frontend.html">Frontend</a></li><li><a href="Handshake.html">Handshake</a><ul class='methods'><li data-type='method'><a href="Handshake.html#sign">sign</a></li><li data-type='method'><a href="Handshake.html#toBuffer">toBuffer</a></li><li data-type='method'><a href="Handshake.html#verify">verify</a></li><li data-type='method'><a href="Handshake.html#.challenge">challenge</a></li></ul></li><li><a href="Proxy.html">Proxy</a><ul class='methods'><li data-type='method'><a href="Proxy.html#clean">clean</a></li><li data-type='method'><a href="Proxy.html#pop">pop</a></li><li data-type='method'><a href="Proxy.html#push">push</a></li></ul></li><li><a href="Server.html">Server</a><ul class='methods'><li data-type='method'><a href="Server.html#getProxyInfoById">getProxyInfoById</a></li><li data-type='method'><a href="Server.html#listen">listen</a></li><li data-type='method'><a href="Server.html#routeHttpRequest">routeHttpRequest</a></li><li data-type='method'><a href="Server.html#routeWebSocketConnection">routeWebSocketConnection</a></li></ul></li><li><a href="Tunnel.html">Tunnel</a><ul class='methods'><li data-type='method'><a href="Tunnel.html#close">close</a></li><li data-type='method'><a href="Tunnel.html#open">open</a></li><li data-type='method'><a href="Tunnel.html#queryProxyInfoFromServer">queryProxyInfoFromServer</a></li><li data-type='method'><a href="Tunnel.html#reconnect">reconnect</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">diglet.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+const { createLogger } = require('bunyan');
+const merge = require('merge');
+const async = require('async')
+// const https = require('https');
+const { EventEmitter } = require('events');
+const Server = require('./server');
+const Frontend = require('./frontend');
+
+
+/**
+ * Manages a diglet instance
+ */
+class Diglet extends EventEmitter {
+
+  static get DEFAULTS() {
+    return {
+      hostname: 'tunnel.deadcanaries.org',
+      proxyPort: 443,
+      redirectPort: 80,
+      tunnelPort: 8443,
+      serverPrivateKey: null,
+      serverSSLCertificate: null,
+      whitelist: false,
+      logger: createLogger({ name: 'diglet' }),
+    };
+  }
+
+  _checkOptions(o) {
+    o.proxyPort = parseInt(o.proxyPort);
+    o.tunnelPort = parseInt(o.tunnelPort);
+    o.redirectPort = parseInt(o.redirectPort);
+    return o;
+  }
+
+  /**
+   * @constructor
+   * @param {object} [options]
+   */
+  constructor(options = {}) {
+    super();
+
+    this._opts = this._checkOptions(merge(Diglet.DEFAULTS, options));
+    this._logger = this._opts.logger;
+
+    this._credentials = {
+      key: this._opts.serverPrivateKey,
+      cert: this._opts.serverSslCertificate
+    };
+
+    this.server = new Server({
+      ...this._opts,
+      ...this._credentials
+    });
+    this.frontend = new Frontend({
+      tlsCredentials: this._credentials,
+      ...this._opts
+    });
+
+    this.frontend.on('INCOMING_HTTPS', ({ proxy, request, response, next }) => {
+      this.server.routeHttpRequest(proxy, request, response, next);
+    });
+    this.frontend.on('INCOMING_WSS', ({ proxy, request, socket }) => {
+      this.server.routeWebSocketConnection(proxy, request, socket);
+    });
+    this.frontend.on('PROXY_QUERY', ({ proxy, queryHandler }) => {
+      queryHandler(this.server.getProxyInfoById(proxy));
+    });
+  }
+
+  /**
+   * Establishes the server in a forked process
+   */
+  listen(callback) {
+    async.parallel([
+      (done) => this.server.listen(this._opts.tunnelPort, done),
+      (done) => this.frontend.listen(this._opts.proxyPort, done),
+      (done) => this.frontend.redirect(this._opts.redirectPort, done)
+    ], err => {
+      callback(err);
+    });
+  }
+
+  /**
+   * Closes servers
+   */
+  close() {
+    this.frontend.proxy.close();
+    this.frontend.redirect.close();
+    this.server._server.close();
+  }
+
+}
+
+module.exports = Diglet;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Sat Nov 09 2024 14:31:55 GMT-0800 (Pacific Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>
