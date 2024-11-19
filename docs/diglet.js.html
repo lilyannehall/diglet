@@ -5,7 +5,6 @@
 const { createLogger } = require('bunyan');
 const merge = require('merge');
 const async = require('async')
-// const https = require('https');
 const { EventEmitter } = require('events');
 const Server = require('./server');
 const Frontend = require('./frontend');
@@ -18,7 +17,7 @@ class Diglet extends EventEmitter {
 
   static get DEFAULTS() {
     return {
-      hostname: 'tunnel.deadcanaries.org',
+      hostname: 'tun.tacticalchihuahua.lol',
       proxyPort: 443,
       redirectPort: 80,
       tunnelPort: 8443,

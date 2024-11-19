@@ -1,14 +1,58 @@
-Diglet
-======
+# diglet *reverse http tunnel client+server*
 
-Diglet is an *fully encrypted* reverse HTTPS tunnel server and client. It 
 enables you to securely make any HTTP(S) server running behind a restrictive 
 NAT or firewall accessible from the internet.
 
-Installation
-------------
+## how it works
 
-Diglet depends on Node.js 10 and the appropriate packages for building native 
+Diglet is a relatively simple machine. It consists of only 4 classes: Server, 
+Proxy, Tunnel, and Handshake. A server performs two duties: it listens for 
+HTTPS requests on the internet and forwards them through a pool of tunnels 
+associated with a proxy.
+
+When a client establishes a tunnel, it connects to a TCP socket on the Diglet 
+server over TLS. The server issues a challenge to the client which the client 
+signs using ECDSA to authenticate it's identity. This is the handshake and if 
+it's successful, the client keeps the socket open and the server adds it to a 
+pool of other connections ("tunnels") from this same client.
+
+This connection pool is associated with the client's identity key and is called 
+a "proxy". When the diglet server receives a HTTPS request on the "front", it 
+parses the subdomain, matches it against the currently managed proxies. If it 
+finds a proxy that matches, it selects one of the open tunnels back to the 
+client and pipes the incoming request through it.
+
+On the client's end, every tunnel that is established is connected to an open 
+socket to a local HTTP(S) service running on the client's computer (but not 
+accessible directly over the internet). When the diglet proxy forwards an 
+incoming request down the tunnel, it is received by the client and forwarded 
+straight through to the client's local server which responds and the resulting 
+response get piped back through the tunnel, up to the diglet server, and on 
+through to the host that made the original HTTPS request.
+
+Every connection along this path is secured with TLS, making all messages sent 
+over the wire fully encrypted, even if the server running on the client's 
+computer is *not* secured with SSL. Every time a a tunnel is used, it is 
+disposed of and new tunnel is opened in its place. This allows for a fairly 
+high number of requests to be serviced at any given moment. Diglet will even 
+queue requests until a new tunnel is opened if all tunnels are exhausted or 
+if the client disconnects or has a poor connection.
+
+Diglet intentionally does not support cleartext connections and by default is 
+configured to redirect all requests to port 80 to port 443. We recommend using 
+the browser extension [HTTPSEverywhere](https://www.eff.org/https-everywhere), 
+since this technique still allows an attacker to intercept and redirect the 
+original request if HTTPS is not explicity used. Diglet does, however, modify 
+the response sent back from your tunneled server to include a 
+[HTTP Strict Transport Security (HSTS)](https://en.m.wikipedia.org/wiki/HTTP_Strict_Transport_Security) 
+header so that there should only *ever* be a single unencrypted request that 
+has to be redirected for a user *if* they mistakenly try to access your tunnel 
+over HTTP.
+
+
+## installation
+
+Diglet depends on Node.js LTS and the appropriate packages for building native 
 modules for your platform.
 
 ```bash
@@ -20,7 +64,7 @@ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | 
 source ~/.bashrc
 
 # install nodejs lts release
-nvm install 10
+nvm install --lts
 
 # install build dependencies (debian based)
 #   apt install build-essential 
@@ -35,8 +79,7 @@ nvm install 10
 npm install -g github:tacticalchihuahua/diglet
 ```
 
-Client Tunneling
-----------------
+## client tunneling
 
 Once you have the `diglet` package installed, you can use it to establish a 
 reverse tunnel from a local HTTP(S) server to a diglet server on the internet.
@@ -72,8 +115,16 @@ Hostname=mydomain.tld
 TunnelPort=8443
 ```
 
-Server Setup
-------------
+## running a static server
+
+Passing the `--www` flag will start a static file server in the current directory 
+and return a public link.
+
+```
+diglet tunnel --www
+```
+
+## server setup
 
 This guide makes a few assumptions about the providers you will use for your 
 server and for your domains, however this should translate to any number of 
@@ -204,55 +255,7 @@ Whitelist[]=3b7bc044d717e272cde960a8da782846425fd59c
 
 Repeat as many of these lines as you like to add more authorized clients.
 
-How It Works
-------------
-
-Diglet is a relatively simple machine. It consists of only 4 classes: Server, 
-Proxy, Tunnel, and Handshake. A server performs two duties: it listens for 
-HTTPS requests on the internet and forwards them through a pool of tunnels 
-associated with a proxy.
-
-When a client establishes a tunnel, it connects to a TCP socket on the Diglet 
-server over TLS. The server issues a challenge to the client which the client 
-signs using ECDSA to authenticate it's identity. This is the handshake and if 
-it's successful, the client keeps the socket open and the server adds it to a 
-pool of other connections ("tunnels") from this same client.
-
-This connection pool is associated with the client's identity key and is called 
-a "proxy". When the diglet server receives a HTTPS request on the "front", it 
-parses the subdomain, matches it against the currently managed proxies. If it 
-finds a proxy that matches, it selects one of the open tunnels back to the 
-client and pipes the incoming request through it.
-
-On the client's end, every tunnel that is established is connected to an open 
-socket to a local HTTP(S) service running on the client's computer (but not 
-accessible directly over the internet). When the diglet proxy forwards an 
-incoming request down the tunnel, it is received by the client and forwarded 
-straight through to the client's local server which responds and the resulting 
-response get piped back through the tunnel, up to the diglet server, and on 
-through to the host that made the original HTTPS request.
-
-Every connection along this path is secured with TLS, making all messages sent 
-over the wire fully encrypted, even if the server running on the client's 
-computer is *not* secured with SSL. Every time a a tunnel is used, it is 
-disposed of and new tunnel is opened in its place. This allows for a fairly 
-high number of requests to be serviced at any given moment. Diglet will even 
-queue requests until a new tunnel is opened if all tunnels are exhausted or 
-if the client disconnects or has a poor connection.
-
-Diglet intentionally does not support cleartext connections and by default is 
-configured to redirect all requests to port 80 to port 443. We recommend using 
-the browser extension [HTTPSEverywhere](https://www.eff.org/https-everywhere), 
-since this technique still allows an attacker to intercept and redirect the 
-original request if HTTPS is not explicity used. Diglet does, however, modify 
-the response sent back from your tunneled server to include a 
-[HTTP Strict Transport Security (HSTS)](https://en.m.wikipedia.org/wiki/HTTP_Strict_Transport_Security) 
-header so that there should only *ever* be a single unencrypted request that 
-has to be redirected for a user *if* they mistakenly try to access your tunnel 
-over HTTP.
-
-Programmatic Usage
-------------------
+## programmatic usage
 
 You can establish a reverse tunnel programmatically from other Node.js 
 programs easily. Just install diglet as a dependency of your project:
@@ -286,21 +289,10 @@ tunnel.once('connected', function() {
 tunnel.open();
 ```
 
-Building a Release
-------------------
+## license
 
-```bash
-git clone https://gitlab.com/tacticalchihuahua/diglet.git
-cd diglet
-npm install
-npm run release # releases for all platforms will be in dist/
-```
-
-License
--------
-
-Diglet - Fully Encrypted Reverse HTTPS Tunnel  
-Copyright (C) 2019 Lily Anne Hall.
+> Diglet - Reverse HTTPS Tunnels  
+> Copyright (C) 2019 Lily Anne Hall.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published

@@ -15,5 +15,6 @@
   "markdown": {
       "hardwrap": false,
       "idInHeadings": true
-  }
+  },
+  "source": { "includePattern": ".+\\.(m|c)?js(doc|x)?$" }
 }

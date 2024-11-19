@@ -9,7 +9,7 @@
     "diglet-tunnel": "bin/diglet-tunnel.js"
   },
   "engines": {
-    "node": "10"
+    "node": ">=22"
   },
   "scripts": {
     "start-app": "DEBUG=1 electron-forge start -- --enable-transparent-visuals --disable-gpu --no-sandbox",
@@ -18,14 +18,11 @@
     "test": "mocha --exit",
     "linter": "eslint index.js lib test",
     "coverage": "istanbul cover _mocha -- --exit",
-    "release-tunnel": "pkg ./bin/diglet-tunnel.js --out-path dist",
-    "release-server": "pkg ./bin/diglet-server.js --out-path dist",
-    "release": "npm run release-tunnel && npm run release-server",
-    "make-doc": "mkdir -p ./docs && rm -r ./docs && jsdoc lib -r -R README.md -c .jsdoc.json --verbose -d ./docs"
+    "generate-docs": "mkdir -p ./docs && rm -r ./docs && jsdoc lib -r -R README.md -c .jsdoc.json --verbose -d ./docs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tacticalchihuahua/diglet.git"
+    "url": "git+https://github.com/lilyannehall/diglet.git"
   },
   "keywords": [
     "tunnel",
@@ -34,15 +31,10 @@
   "author": "Lily Anne <lily@tacticalchihuahua.lol>",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/tacticalchihuahua/diglet/issues"
+    "url": "https://github.com/lilyannehall/diglet/issues"
   },
-  "homepage": "https://github.com/tacticalchihuahua/diglet#readme",
+  "homepage": "https://github.com/lilyannehall/diglet#readme",
   "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.60",
-    "@electron-forge/maker-deb": "^6.0.0-beta.50",
-    "@electron-forge/maker-dmg": "^6.0.0-beta.50",
-    "@electron-forge/maker-squirrel": "^6.0.0-beta.50",
-    "@electron-forge/maker-zip": "^6.0.0-beta.50",
     "chai": "^4.1.2",
     "clean-jsdoc-theme": "^4.3.0",
     "electron": "9",
@@ -51,7 +43,6 @@
     "jsdoc": "^4.0.4",
     "mocha": "^5.2.0",
     "pem": "^1.14.8",
-    "pkg": "^4.4.3",
     "ws": "^5.2.2"
   },
   "dependencies": {
@@ -60,10 +51,8 @@
     "camel-case": "^4.1.1",
     "colors": "^1.4.0",
     "commander": "^2.9.0",
-    "electron-squirrel-startup": "^1.0.0",
     "express": "^4.17.1",
     "http-server": "^0.12.1",
-    "is-electron": "^2.2.0",
     "merge": "^1.2.1",
     "mkdirp": "^1.0.3",
     "pug": "^2.0.4",
@@ -104,7 +93,7 @@
           "name": "@electron-forge/maker-deb",
           "config": {
             "maintainer": "Tactical Chihuahua",
-            "homepage": "https://github.com/tacticalchihuahua/diglet",
+            "homepage": "https://github.com/lilyannehall/diglet",
             "description": "Securely expose local web servers and files to the internet",
             "icon": "app/assets/img/icon.svg",
             "name": "diglet",
