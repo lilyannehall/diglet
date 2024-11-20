@@ -1,6 +1,6 @@
 {
   "name": "@tacticalchihuahua/diglet",
-  "version": "3.0.2-beta",
+  "version": "4.0.0",
   "description": "fully encrypted reverse https tunnel",
   "main": "index.js",
   "bin": {
@@ -37,7 +37,6 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "clean-jsdoc-theme": "^4.3.0",
-    "electron": "9",
     "eslint": "^6.8.0",
     "istanbul": "^0.4.5",
     "jsdoc": "^4.0.4",
